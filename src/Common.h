@@ -1,10 +1,9 @@
 //----------------------------------------------------
 //Author: Dayou Du(2018) 
 //dayoudu@nyu.edu
-
 #pragma once
-
-typedef unsigned char BYTE;
+#include<cstdint>
+typedef uint8_t BYTE;
 
 //default params
 #define BF_DEFAULT_BYTES 0x8000000         //128MB

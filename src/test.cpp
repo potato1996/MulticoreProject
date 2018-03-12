@@ -1,6 +1,7 @@
 //----------------------------------------------------
 //Author: Dayou Du(2018) 
 //dayoudu@nyu.edu
+
 #include"SerialBF.h"
 void testSerialBF(const int testNum,
 	const size_t size = BF_DEFAULT_BYTES,

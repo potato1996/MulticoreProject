@@ -1,11 +1,13 @@
 //----------------------------------------------------
 //Author: Dayou Du(2018) 
 //dayoudu@nyu.edu
+
 #pragma once
 #include"Common.h"
 #include"murmur.h"
+#include"CommonFilter.h"
 #include<cstdint>
-class SerialBF {
+class SerialBF:public CommonFilter {
 public:
 	SerialBF() = delete;
 

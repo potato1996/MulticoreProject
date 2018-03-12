@@ -80,7 +80,10 @@ add_batch(const void * keys,
 	const BYTE* keyArr = (const BYTE*)keys;
 
 	//TODO: Get a more "explainable" chunk size based on calculation
-	const int chunkSize = std::max(8, std::min(1000, (batchLen - 1) / threadNum + 1));
+	int chunkSize = std::min(1000, (batchLen - 1) / threadNum + 1);
+
+	//ensure that chunkSize is a multiply of 8
+	chunkSize = ((chunkSize - 1) / 8 + 1) * 8;
 
 	omp_set_num_threads(threadNum);
 
@@ -99,7 +102,8 @@ add_batch(const void * keys,
 			uint64_t byteId = posId / 8;
 			uint64_t bitId = posId % 8;
 			
-			//here we do NOT need an atomic operation. Because each chunk has at least 8 elements.
+			//here we do NOT need an atomic operation.
+			//Because we ensured that chunksize is a mutiply of 8
 			bitArray[byteId] |= mask[bitId];
 
 		}

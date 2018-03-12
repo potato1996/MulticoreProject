@@ -62,7 +62,7 @@ generate(const size_t keyLen, //in bytes
 
 #ifdef DEBUG
 	printf("Start Generating Test Cases\n");
-	printf("Key Length = %zd Byte(s), # of insertions = %d, # of queries = %d, query hit rate = %lf\n",
+	printf("Key Length = %zd Byte(s), # of insertions = %d, # of queries = %d, query hit rate = %lf\n\n",
 		keyLen, numAdd, numQuery, hitRate);
 #endif // DEBUG
 
@@ -101,7 +101,7 @@ generate(const size_t keyLen, //in bytes
 	}
 
 #ifdef DEBUG
-	printf("Done Generating Test Cases\n");
+	printf("Done Generating Test Cases\n\n");
 #endif // DEBUG
 }
 
@@ -109,13 +109,25 @@ void testCase::
 runTest(CommonFilter* f,
 	bool validateResult) {
 
+#ifdef DEBUG
+	printf("Start Inserting Keys\n");
+	printf("Key Length = %zd Byte(s), # of insertions = %d\n\n",
+		keyLen, numAdd);
+#endif // DEBUG
+
 	//run insertions
 	auto startTime = std::chrono::high_resolution_clock::now();
 	f->add_batch(addKeys, numAdd, keyLen);
 	auto endTime = std::chrono::high_resolution_clock::now();
 
 	std::chrono::duration<double> diff = endTime - startTime;
-	printf("Total Insertion Time = %lf\n", diff.count());
+	printf("Total Insertion Time = %lf\n\n", diff.count());
+
+#ifdef DEBUG
+	printf("Start Querying Keys \n");
+	printf("Key Length = %zd Byte(s), # of queried = %d\n\n",
+		keyLen, numQuery);
+#endif // DEBUG
 
 	BYTE* runResult = new BYTE[numQuery / 8];
 
@@ -125,7 +137,11 @@ runTest(CommonFilter* f,
 	endTime = std::chrono::high_resolution_clock::now();
 
 	diff = endTime - startTime;
-	printf("Total Query Time = %lf\n", diff.count());
+	printf("Total Query Time = %lf\n\n", diff.count());
+
+#ifdef DEBUG
+	printf("Start Validating Results/Calculating False Positive Rate\n\n");
+#endif // DEBUG
 
 	if (validateResult) {
 		int count = 0;
@@ -133,7 +149,7 @@ runTest(CommonFilter* f,
 			//get diff and count diff
 			count += bitCount(runResult[i] ^ queryAns[i]);
 		}
-		printf("False Positive Rate = %lf/n", 1.0 * count / numQuery);
+		printf("False Positive Rate = %lf\n\n", 1.0 * count / numQuery);
 	}
 
 	delete[]runResult;

@@ -4,6 +4,7 @@
 
 #include"SerialBF.h"
 #include"helperFunctions.h"
+#include"murmur.h"
 #include<cstdlib>
 #include<ctime>
 #include<cstring>

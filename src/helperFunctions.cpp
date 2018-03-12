@@ -1,3 +1,7 @@
+//----------------------------------------------------
+//Author: Dayou Du(2018) 
+//dayoudu@nyu.edu
+
 #include"helperFunctions.h"
 namespace {
 	const BYTE mask[8] = {

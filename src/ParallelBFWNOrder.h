@@ -3,22 +3,21 @@
 //dayoudu@nyu.edu
 
 #pragma once
-#include"Common.h"
 #include"CommonFilter.h"
-#include<cstdint>
-class SerialBF:public CommonFilter {
+class ParallelBFWNOrder :public CommonFilter {
 public:
-	SerialBF() = delete;
+	ParallelBFWNOrder() = delete;
 
-	SerialBF(const size_t size = BF_DEFAULT_BYTES,
-		const size_t k = BF_DEFAULT_K);
+	ParallelBFWNOrder(const size_t size = BF_DEFAULT_BYTES,
+		const size_t k = BF_DEFAULT_K,
+		const int _tn = PBF_DEFAULT_TN);
 
-	SerialBF(const SerialBF&) = delete;
+	ParallelBFWNOrder(const ParallelBFWNOrder&) = delete;
 
-	void add(const void* key, 
+	void add(const void* key,
 		const int len = ELE_DEFAULT_BYTES);
 
-	bool query(const void* key, 
+	bool query(const void* key,
 		const int len = ELE_DEFAULT_BYTES);
 
 	void add_batch(const void* keys,
@@ -30,11 +29,12 @@ public:
 		const int batchLen,
 		const int keyLen = ELE_DEFAULT_BYTES);
 
-	~SerialBF();
+	~ParallelBFWNOrder();
 
 private:
 	BYTE* bitArray;
 	uint64_t bitArrLen;
+	int threadNum;
 
 #ifdef DISABLE_TWO_PHASE
 	size_t numHashes;

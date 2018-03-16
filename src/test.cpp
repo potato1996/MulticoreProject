@@ -2,18 +2,27 @@
 //Author: Dayou Du(2018) 
 //dayoudu@nyu.edu
 
-#include"SerialBF.h"
-void testSerialBF(const int testNum,
+#include"testCase.h"
+#include"ParallelBFWNOrder.h"
+#include<cstdlib>
+void testUTAPBF(const int threadNum,
+	const int testNum,
 	const size_t size = BF_DEFAULT_BYTES,
 	const size_t k = BF_DEFAULT_K) {
-	SerialBF bf(size, k);
-	int64_t key[2];
-	for (int i = 0; i < testNum; ++i) {
-		key[1] = i;
-		bf.add(key, 16);
-	}
+	CommonFilter* cf = new ParallelBFWNOrder(size, k, threadNum);
+	testCase* testCases = new testCase();
+	testCases->generate(size, testNum, testNum, 0.8);
+	testCases->runTest(cf, true);
+	delete testCases;
+	delete cf;
 }
 
-int main() {
-	testSerialBF(20,3,2);
+int main(int argc, char** argv) {
+	
+	const int threadNum = atoi(argv[1]);
+	const int testNum = atoi(argv[2]);
+	const int keyLen = atoi(argv[3]);
+	const int k = atoi(argv[4]);
+	testUTAPBF(threadNum, testNum, keyLen, k);
+	return 0;
 }

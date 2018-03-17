@@ -30,6 +30,13 @@ public:
 		const int batchLen,
 		const int keyLen = ELE_DEFAULT_BYTES);
 
+#ifdef DISABLE_TWO_PHASE
+	uint32_t* getSeeds() { return seeds; }
+	void forceSetSeeds(uint32_t* _s) {
+		for (int i = 0; i < numHashes; ++i)seeds[i] = _s[i];
+	}
+#endif
+
 	~SerialBF();
 
 private:

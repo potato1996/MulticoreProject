@@ -31,6 +31,13 @@ public:
 
 	~ParallelBFWNOrder();
 
+#ifdef DISABLE_TWO_PHASE
+	uint32_t* getSeeds() { return seeds; }
+	void forceSetSeeds(uint32_t* _s) {
+		for (int i = 0; i < numHashes; ++i)seeds[i] = _s[i];
+	}
+#endif
+
 private:
 	BYTE* bitArray;
 	uint64_t bitArrLen;

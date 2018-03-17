@@ -17,7 +17,7 @@ namespace {
 	}
 	// has possiblity of p to return true, (1 - p) to return false
 	inline bool dice(const double p) {
-		return  (1.0 * std::rand() / INT_MAX) <= p;
+		return  (1.0 * std::rand() / RAND_MAX) <= p;
 	}
 	inline int randRange(const int k) { //exclusive
 		return std::rand() % k;

@@ -11,8 +11,9 @@ void testUTAPBF(const int threadNum,
 	const int testNum,
 	const size_t BFsize = BF_DEFAULT_BYTES,
 	const size_t BFhashNum = BF_DEFAULT_K) {
-	CommonFilter* cf = new ParallelBFWNOrder(BFsize, BFhashNum, threadNum);
-	CommonFilter* cfBaseline = new SerialBF(BFsize,BFhashNum);
+	auto cf = new ParallelBFWNOrder(BFsize, BFhashNum, threadNum);
+	auto cfBaseline = new SerialBF(BFsize,BFhashNum);
+	cf->forceSetSeeds(cfBaseline->getSeeds());
 	testCase* testCases = new testCase();
 	testCases->generate(ELE_DEFAULT_BYTES, testNum, testNum, 0.8);
 	testCases->runTest(cfBaseline, true);

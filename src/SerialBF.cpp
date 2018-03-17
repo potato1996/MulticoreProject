@@ -8,7 +8,7 @@
 #include<cstdlib>
 #include<ctime>
 #include<cstring>
-
+#include<cstdio>
 
 SerialBF::
 SerialBF(const size_t size,
@@ -48,6 +48,10 @@ add(const void* key,
 		uint64_t out[2];
 		MurmurHash3_x64_128(key, len, seeds[i], out);
 		uint64_t bitId = out[0] % bitArrLen;
+#ifdef DEBUG
+		std::printf("Insertion Key=%d, Set Bit=%ld\n",(int)(*((BYTE*)key)), bitId);
+#endif
+
 		setBit(bitArray, bitId);
 	}
 #endif
@@ -63,6 +67,9 @@ query(const void* key,
 		uint64_t out[2];
 		MurmurHash3_x64_128(key, len, seeds[i], out);
 		uint64_t bitId = out[0] % bitArrLen;
+#ifdef DEBUG
+		std::printf("Query Key=%d, Bitid=%ld\n",(int)(*((BYTE*)key)),bitId);
+#endif
 		if (!testBit(bitArray, bitId)) {
 			return false;
 		}

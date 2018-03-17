@@ -14,5 +14,5 @@ typedef uint8_t BYTE;
 #define PBF_DEFAULT_TN 8
 
 //switchs
-#define DEBUG
+//#define DEBUG
 #define DISABLE_TWO_PHASE

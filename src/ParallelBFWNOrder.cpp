@@ -10,7 +10,7 @@
 #include<cstring>
 #include<omp.h>
 #include<algorithm>
-
+#include<cstdio>
 namespace {
 	const BYTE mask[8] = {
 		1,
@@ -63,6 +63,9 @@ query(const void * key,
 		uint64_t out[2];
 		MurmurHash3_x64_128(key, len, seeds[i], out);
 		uint64_t bitId = out[0] % bitArrLen;
+#ifdef DEBUG
+		std::printf("Query Key=%d, Bitid=%ld\n",(int)(*((BYTE*)key)),bitId);
+#endif
 		if (!testBit(bitArray, bitId)) {
 			return false;
 		}
@@ -94,7 +97,9 @@ add_batch(const void * keys,
 			uint64_t out[2];
 			MurmurHash3_x64_128(&keyArr[i * keyLen], keyLen, seeds[k], out);
 			uint64_t posId = out[0] % bitArrLen;
-
+#ifdef DEBUG
+			std::printf("Insertion Key=%d, Set Bit=%ld\n",(int)keyArr[i*keyLen], posId);
+#endif
 			//set bit
 			uint64_t byteId = posId / 8;
 			uint64_t bitId = posId % 8;
@@ -131,7 +136,10 @@ query_batch(const void * keys,
 			//set result
 			uint64_t byteId = i / 8;
 			uint64_t bitId = i % 8;
-			
+			#ifdef DEBUG
+				std::printf("Query Key=%d, Claim In Set\n",(int)keyArr[i*keyLen]);
+			#endif
+
 			//here we do NOT need an atomic operation.
 			//Because we ensured that chunksize is a mutiply of 8
 			results[byteId] |= mask[bitId];

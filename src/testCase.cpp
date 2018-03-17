@@ -131,6 +131,7 @@ runTest(CommonFilter* f,
 #endif // DEBUG
 
 	BYTE* runResult = new BYTE[numQuery / 8];
+	memset(runResult,0,numQuery/8);
 
 	//run queries
 	startTime = std::chrono::high_resolution_clock::now();

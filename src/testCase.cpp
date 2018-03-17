@@ -10,6 +10,7 @@
 #include<cstring>
 #include<numeric>
 #include<chrono>
+#include<climits>
 namespace {
 	inline BYTE randByte() {
 		return (BYTE)(std::rand() % 0xff);

@@ -80,14 +80,11 @@ add_batch(const void * keys,
 	const BYTE* keyArr = (const BYTE*)keys;
 
 	//TODO: Get a more "explainable" chunk size based on calculation
-	int chunkSize = std::min(1000, (batchLen - 1) / threadNum + 1);
-
-	//ensure that chunkSize is a multiply of 8
-	chunkSize = ((chunkSize - 1) / 8 + 1) * 8;
+	//int chunkSize = std::min(1000, (batchLen - 1) / threadNum + 1);
 
 	omp_set_num_threads(threadNum);
 
-#pragma omp parallel for schedule(static,chunkSize)
+#pragma omp parallel for schedule(static) //, chunkSize)
 	for (int i = 0; i < batchLen; ++i) {
 
 #ifdef DISABLE_TWO_PHASE
@@ -101,10 +98,8 @@ add_batch(const void * keys,
 			//set bit
 			uint64_t byteId = posId / 8;
 			uint64_t bitId = posId % 8;
-			
-			//here we do NOT need an atomic operation.
-			//Because we ensured that chunksize is a mutiply of 8
-			bitArray[byteId] |= mask[bitId];
+			#pragma omp atomic
+				bitArray[byteId] |= mask[bitId];
 
 		}
 #endif
@@ -122,18 +117,24 @@ query_batch(const void * keys,
 	const BYTE* keyArr = (const BYTE*)keys;
 
 	//TODO: Get a more "explainable" chunk size based on calculation
-	const int chunkSize = std::max(1, std::min(1000, (batchLen - 1) / threadNum + 1));
-
+	//const int chunkSize = std::max(1, std::min(1000, (batchLen - 1) / threadNum + 1));
+	int chunkSize = (batchLen - 1)/threadNum + 1;
+	
+	//ensure that chunkSize is a multiply of 8
+	chunkSize = ((chunkSize - 1) / 8 + 1) * 8;
+	
 	omp_set_num_threads(threadNum);
 
-#pragma omp parallel for schedule(static,chunkSize)
+#pragma omp parallel for schedule(static, chunkSize)
 	for (int i = 0; i < batchLen; ++i) {
 		if (query(&keyArr[i*keyLen], keyLen)) {
 			//set result
 			uint64_t byteId = i / 8;
 			uint64_t bitId = i % 8;
-			#pragma omp atomic
-				results[byteId] |= mask[bitId];
+			
+			//here we do NOT need an atomic operation.
+			//Because we ensured that chunksize is a mutiply of 8
+			results[byteId] |= mask[bitId];
 		}
 	}
 }

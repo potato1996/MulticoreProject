@@ -7,11 +7,15 @@
 #include<cstdlib>
 typedef uint8_t BYTE;
 
-//default params
+//default params - BF
 #define BF_DEFAULT_BYTES 0x8000000         //128MB
 #define BF_DEFAULT_K 8
 #define ELE_DEFAULT_BYTES 16
 #define PBF_DEFAULT_TN 8
+
+//default params - QF
+#define QF_DEFAULT_QBITS 26              //128MB
+#define QF_DEFAULT_RBITS 13
 
 //switchs
 //#define DEBUG

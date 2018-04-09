@@ -19,4 +19,4 @@ typedef uint8_t BYTE;
 
 //switchs
 //#define DEBUG
-#define DISABLE_TWO_PHASE
+//#define DISABLE_TWO_PHASE

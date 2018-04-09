@@ -35,15 +35,19 @@ ParallelBFWNOrder(const size_t size,
 	std::memset(bitArray, 0, size);
 	threadNum = _tn;
 
+	numHashes = k;
 #ifdef DISABLE_TWO_PHASE
 	//initialize seeds
-	numHashes = k;
 	seeds = new uint32_t[k];
 	std::srand(std::time(nullptr));
 	for (size_t i = 0; i < k; ++i) {
 		seeds[i] = (uint32_t)std::rand();
 	}
-#endif
+#else
+	std::srand(std::time(nullptr));
+	seed = (uint32_t)std::rand();
+#endif //DISABLE_TWO_PHASE
+
 }
 
 void ParallelBFWNOrder::
@@ -65,13 +69,29 @@ query(const void * key,
 		uint64_t bitId = out[0] % bitArrLen;
 #ifdef DEBUG
 		std::printf("Query Key=%d, Bitid=%ld\n",(int)(*((BYTE*)key)),bitId);
-#endif
+#endif //DEBUG
 		if (!testBit(bitArray, bitId)) {
 			return false;
 		}
 	}
 	return true;
-#endif
+#else  //DISABLE_TWO_PHASE
+	uint64_t out[2];
+	MurmurHash3_x64_128(key, len, seed, out);
+	for(size_t i = 0; i < numHashes; ++i){
+		
+		uint64_t combineHash = out[0] + i * out[1];
+		uint64_t bitId = combineHash % bitArrLen;
+
+#ifdef DEBUG
+		std::printf("Query Key=%d, Bitid=%ld\n",(int)(*((BYTE*)key)),bitId);
+#endif  //DEBUG
+		if (!testBit(bitArray, bitId)) {
+			return false;
+		}
+	}
+	return true;
+#endif //DISABLE_TWO_PHASE
 
 }
 
@@ -91,23 +111,46 @@ add_batch(const void * keys,
 	for (int i = 0; i < batchLen; ++i) {
 
 #ifdef DISABLE_TWO_PHASE
+
 		for (size_t k = 0; k < numHashes; ++k) {
 
 			//calculate hash(i,k)
 			uint64_t out[2];
 			MurmurHash3_x64_128(&keyArr[i * keyLen], keyLen, seeds[k], out);
 			uint64_t posId = out[0] % bitArrLen;
+
 #ifdef DEBUG
 			std::printf("Insertion Key=%d, Set Bit=%ld\n",(int)keyArr[i*keyLen], posId);
-#endif
+#endif //DEBUG
+
 			//set bit
 			uint64_t byteId = posId / 8;
 			uint64_t bitId = posId % 8;
 			#pragma omp atomic
 				bitArray[byteId] |= mask[bitId];
-
 		}
-#endif
+
+#else 
+
+		uint64_t out[2];
+		MurmurHash3_x64_128(&keyArr[i * keyLen], keyLen, seed, out);
+		
+		for(size_t k = 0; k < numHashes; ++k){
+			uint64_t combineHash = out[0] + k * out[1];
+			uint64_t posId = combineHash % bitArrLen;	
+
+#ifdef DEBUG
+			std::printf("Insertion Key=%d, Set Bit=%ld\n",(int)keyArr[i*keyLen], posId);
+#endif //DEBUG
+
+			//set bit
+			uint64_t byteId = posId / 8;
+			uint64_t bitId = posId % 8;
+			#pragma omp atomic
+				bitArray[byteId] |= mask[bitId];
+		}
+
+#endif //DISABLE_TWO_PHASE
 
 	}
 

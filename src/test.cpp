@@ -9,13 +9,20 @@
 #include"Common.h"
 #include<cstdio>
 #include<cstdlib>
+
 void testUTAPBF(const int threadNum,
 	const int testNum,
 	const size_t BFsize = BF_DEFAULT_BYTES,
 	const size_t BFhashNum = BF_DEFAULT_K) {
 	auto cf = new ParallelBFWNOrder(BFsize, BFhashNum, threadNum);
 	auto cfBaseline = new SerialBF(BFsize,BFhashNum);
+
+#ifdef DISABLE_TWO_PHASE
 	cf->forceSetSeeds(cfBaseline->getSeeds());
+#else
+	cf->forceSetSeed(cfBaseline->getSeed());
+#endif
+
 	testCase* testCases = new testCase();
 	testCases->generate(ELE_DEFAULT_BYTES, testNum, testNum, 0.8);
 	testCases->runTest(cfBaseline, true);

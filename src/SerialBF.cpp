@@ -19,15 +19,18 @@ SerialBF(const size_t size,
 	bitArrLen = (uint64_t)size * sizeof(BYTE) * 8;
 	std::memset(bitArray, 0, size);
 
+	numHashes = k;
 #ifdef DISABLE_TWO_PHASE
 	//initialize seeds
-	numHashes = k;
 	seeds = new uint32_t[k];
 	std::srand(std::time(nullptr));
 	for (size_t i = 0; i < k; ++i) {
 		seeds[i] = (uint32_t)std::rand();
 	}
-#endif
+#else
+	std::srand(std::time(nullptr));
+	seed = (uint32_t)std::rand();
+#endif //DISABLE_TWO_PHASE
 }
 
 SerialBF::
@@ -36,7 +39,7 @@ SerialBF::
 
 #ifdef DISABLE_TWO_PHASE
 	delete []seeds;
-#endif
+#endif //DISABLE_TWO_PHASE
 }
 
 void SerialBF::
@@ -48,13 +51,28 @@ add(const void* key,
 		uint64_t out[2];
 		MurmurHash3_x64_128(key, len, seeds[i], out);
 		uint64_t bitId = out[0] % bitArrLen;
+
 #ifdef DEBUG
 		std::printf("Insertion Key=%d, Set Bit=%ld\n",(int)(*((BYTE*)key)), bitId);
-#endif
+#endif //DEBUG
 
 		setBit(bitArray, bitId);
 	}
-#endif
+#else  //DISABLE_TWO_PHASE
+	uint64_t out[2];
+	MurmurHash3_x64_128(key, len, seed, out);
+	for(size_t i = 0; i < numHashes; ++i){
+		
+		uint64_t combineHash = out[0] + i * out[1];
+		uint64_t bitId = combineHash % bitArrLen;
+
+#ifdef DEBUG
+		std::printf("Insertion Key=%d, Set Bit=%ld\n",(int)(*((BYTE*)key)), bitId);
+#endif  //DEBUG
+
+		setBit(bitArray, bitId);
+	}
+#endif  //DISABLE_TWO_PHASE
 
 }
 
@@ -69,13 +87,29 @@ query(const void* key,
 		uint64_t bitId = out[0] % bitArrLen;
 #ifdef DEBUG
 		std::printf("Query Key=%d, Bitid=%ld\n",(int)(*((BYTE*)key)),bitId);
-#endif
+#endif //DEBUG
 		if (!testBit(bitArray, bitId)) {
 			return false;
 		}
 	}
 	return true;
-#endif
+#else  //DISABLE_TWO_PHASE
+	uint64_t out[2];
+	MurmurHash3_x64_128(key, len, seed, out);
+	for(size_t i = 0; i < numHashes; ++i){
+		
+		uint64_t combineHash = out[0] + i * out[1];
+		uint64_t bitId = combineHash % bitArrLen;
+
+#ifdef DEBUG
+		std::printf("Query Key=%d, Bitid=%ld\n",(int)(*((BYTE*)key)),bitId);
+#endif  //DEBUG
+		if (!testBit(bitArray, bitId)) {
+			return false;
+		}
+	}
+	return true;
+#endif //DISABLE_TWO_PHASE
 }
 
 void SerialBF::

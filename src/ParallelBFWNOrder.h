@@ -36,6 +36,11 @@ public:
 	void forceSetSeeds(uint32_t* _s) {
 		for (int i = 0; i < numHashes; ++i)seeds[i] = _s[i];
 	}
+#else
+	uint32_t getSeed() {return seed;}
+	void forceSetSeed(uint32_t _s){
+		seed = _s;
+	}	
 #endif
 
 private:
@@ -43,9 +48,11 @@ private:
 	uint64_t bitArrLen;
 	int threadNum;
 
-#ifdef DISABLE_TWO_PHASE
 	size_t numHashes;
+#ifdef DISABLE_TWO_PHASE
 	uint32_t* seeds;
+#else
+	uint32_t seed;
 #endif
 
 };

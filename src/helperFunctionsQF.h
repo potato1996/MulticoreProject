@@ -22,4 +22,4 @@ uint64_t get_remainder(uint64_t elt);
 bool is_empty_element(uint64_t elt);
 bool is_cluster_start(uint64_t elt);
 bool is_run_start(uint64_t elt);
-size_t table_size(uint32_t qbits, uint32_t rbits);
+uint64_t table_size(uint32_t qbits, uint32_t rbits);

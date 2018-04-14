@@ -61,8 +61,8 @@ bool is_cluster_start(uint64_t element) {
 bool is_run_start(uint64_t element) {
 	return !is_continuation(element) && (is_occupied(element) || is_shifted(element));
 }
-size_t table_size(uint32_t qbits, uint32_t rbits) {
-	size_t bits = (1 << qbits) * (rbits + 3);
-	size_t bytes = bits / 8;
+uint64_t table_size(uint32_t qbits, uint32_t rbits) {
+	uint64_t bits = ((uint64_t)1 << qbits) * (rbits + 3);
+	uint64_t bytes = bits / 8;
 	return (bits % 8) ? (bytes + 1) : bytes;
 }

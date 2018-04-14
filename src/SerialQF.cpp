@@ -15,6 +15,7 @@
 #include<ctime>
 #include<cstring>
 #include<cstdio>
+#include<inttypes.h>
 
 #define LOW_MASK(n) ((1ULL << n) - 1ULL)
 

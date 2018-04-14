@@ -95,6 +95,6 @@ int main(int argc, char** argv) {
 	
 	testUTAPBF(threadNum, testNum, BFsize, BFhashNum);
 	testUTAPQF(threadNum, testNum, qbits, rbits);
-	
+
 	return 0;
 }

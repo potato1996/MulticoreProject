@@ -49,7 +49,7 @@ ParallelQFWNOrder(const size_t q,
 	 *
 	 */
 	lock_block_length = qbits * 3;
-	lock_size = ((uint64_t)2 << q) % lock_block_length == 0? ((uint64_t)2 << q) / lock_block_length: ((uint64_t)2 << q) / lock_block_length + 1;
+	lock_size = ((uint64_t)1 << q) % lock_block_length == 0? ((uint64_t)1 << q) / lock_block_length: ((uint64_t)1 << q) / lock_block_length + 1;
 	lock = (omp_nest_lock_t *) calloc(lock_size, sizeof(omp_nest_lock_t));
 
 	#pragma omp parallel for

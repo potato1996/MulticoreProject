@@ -86,7 +86,7 @@ generate(const size_t keyLen, //in bytes
 		if (dice(hitRate)) {
 			//Generate a hit query
 			int keyId = randRange(numAdd);
-			for (int j = 0; j < keyLen; ++j) {
+			for (size_t j = 0; j < keyLen; ++j) {
 				queryKeys[i * keyLen + j] = addKeys[keyId * keyLen + j];
 			}
 			//mark answer
@@ -95,7 +95,7 @@ generate(const size_t keyLen, //in bytes
 		else {
 			//Generate a miss query
 			//NOTE: Here we just randomly generate a new key - have small posibillity hit
-			for (int j = 0; j < keyLen; ++j) {
+			for (size_t j = 0; j < keyLen; ++j) {
 				queryKeys[i * keyLen + j] = randByte();
 			}
 		}

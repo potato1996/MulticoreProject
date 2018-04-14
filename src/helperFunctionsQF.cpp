@@ -13,7 +13,8 @@ uint64_t decrement(uint64_t index, uint64_t qmask) {
 uint64_t hash(const void* key, const int len, uint32_t seed) {
 	uint64_t out[2];
 	MurmurHash3_x64_128(key, len, seed, out);
-	return out[0];
+	uint64_t combineHash = out[0] + out[1];
+	return combineHash;
 }
 uint64_t hash_to_quotient(uint64_t hash, uint8_t rbits, uint64_t qmask) {
 	return (hash >> rbits) & qmask;

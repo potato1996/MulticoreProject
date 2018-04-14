@@ -5,8 +5,9 @@
 #pragma once
 #include"Common.h"
 #include"CommonFilter.h"
+#include<omp.h>
 #include<cstdint>
-class SerialQF:public CommonFilter {
+class ParallelQFWNOrder:public CommonFilter {
 private:
 	uint64_t get_element(uint64_t index);
 
@@ -17,12 +18,13 @@ private:
 	uint64_t find_run_index(uint64_t fq);
 
 public:
-	SerialQF() = delete;
+	ParallelQFWNOrder() = delete;
 
-	SerialQF(const size_t q = QF_DEFAULT_QBITS,
-		const size_t r = QF_DEFAULT_RBITS);
+	ParallelQFWNOrder(const size_t q = QF_DEFAULT_QBITS,
+		const size_t r = QF_DEFAULT_RBITS, 
+		const int _tn = PQF_DEFAULT_TN);
 
-	SerialQF(const SerialQF&) = delete;
+	ParallelQFWNOrder(const ParallelQFWNOrder&) = delete;
 
 	void add(const void* key, 
 		const int len = ELE_DEFAULT_BYTES);
@@ -39,7 +41,7 @@ public:
 		const int batchLen,
 		const int keyLen = ELE_DEFAULT_BYTES);
 
-	~SerialQF();
+	~ParallelQFWNOrder();
 
 	uint32_t getSeed() {return seed;}
 	
@@ -56,6 +58,10 @@ private:
 	uint64_t elem_mask;
 
 	uint64_t *table; //quotient filter storage table
+
+	omp_nest_lock_t *lock; //lock the table block by block
+	uint64_t lock_size;
+	uint32_t lock_block_length;
 
 	uint32_t seed; //hash function seed
 

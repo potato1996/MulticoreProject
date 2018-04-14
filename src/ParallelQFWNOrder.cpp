@@ -8,19 +8,21 @@
  * https://github.com/vedantk/quotient-filter/
  **/
 
-#include"SerialQF.h"
+#include"ParallelQFWNOrder.h"
 #include"helperFunctions.h"
 #include"helperFunctionsQF.h"
 #include<cstdlib>
 #include<ctime>
 #include<cstring>
 #include<cstdio>
+#include<inttypes.h>
 
 #define LOW_MASK(n) ((1ULL << n) - 1ULL)
 
-SerialQF::
-SerialQF(const size_t q,
-	const size_t r) {
+ParallelQFWNOrder::
+ParallelQFWNOrder(const size_t q,
+	const size_t r,
+	const int _tn) {
 	//generate random seed for the hash function of quotient filter
 	std::srand(std::time(nullptr));
 	seed = (uint32_t)std::rand();
@@ -32,15 +34,40 @@ SerialQF(const size_t q,
 	rmask = LOW_MASK(r);
 	elem_mask = LOW_MASK(elem_bits);
 	table = (uint64_t *) calloc(table_size(qbits, rbits), 1);	
+
+	omp_set_num_threads(_tn);
+
+	/*
+	 * It is highly likely that all runs have length O(log m) ~ = qbits
+	 * where m = 2^qbits is the number of slots in the table.
+	 * But, when occupancy rate is high (>75%), this doesn't hold.
+	 *
+	 * So, our strategy here is to keep a variable lock range. 
+	 * When rough estimated cluster length > lock_block_size / 2 , double lock_block_size.
+	 * and if length > lock_block_size, give a waning of possible false negative due to race conditions.
+	 * (though it is almost impossible with the above strategy and good hashing function.)
+	 *
+	 */
+	lock_block_length = qbits * 3;
+	lock_size = (2 << q) % lock_block_length == 0? (2 << q) / lock_block_length: (2 << q) / lock_block_length + 1;
+	lock = (omp_nest_lock_t *) calloc(lock_size, sizeof(omp_nest_lock_t));
+
+	#pragma omp parallel for
+    for (uint64_t i=0; i<lock_size; i++)
+    	omp_init_nest_lock(&(lock[i]));
 }
 
-SerialQF::
-~SerialQF() {
+ParallelQFWNOrder::
+~ParallelQFWNOrder() {
 	free(table);
+
+	#pragma omp parallel for
+    for (uint64_t i=0; i<lock_size; i++)
+    	omp_destroy_nest_lock(&(lock[i]));
 }
 
 /* Return QF[index] in the lower bits. */
-uint64_t SerialQF::
+uint64_t ParallelQFWNOrder::
 get_element(uint64_t index) {
 	uint64_t element = 0;
 	size_t bit_pos = elem_bits * index;
@@ -57,7 +84,7 @@ get_element(uint64_t index) {
 }
 
 /* Set the lower bits of element into QF[index] */
-void SerialQF::
+void ParallelQFWNOrder::
 set_element(uint64_t index, 
 			uint64_t element) {
 	size_t bit_pos = elem_bits * index;
@@ -75,7 +102,7 @@ set_element(uint64_t index,
 }
 
 /* Find the start index of the run for the quotient of hashed fingerprint (fq). */
-uint64_t SerialQF::
+uint64_t ParallelQFWNOrder::
 find_run_index(uint64_t fq) {
 	/* Find the start of the cluster. */
 	uint64_t b = fq;
@@ -98,7 +125,7 @@ find_run_index(uint64_t fq) {
 }
 
 /* Insert element into QF[index], shifting elements as necessary. */
-void SerialQF::
+void ParallelQFWNOrder::
 insert_into(uint64_t index, uint64_t element) {
 	uint64_t prev;
 	uint64_t curr = element;
@@ -120,12 +147,25 @@ insert_into(uint64_t index, uint64_t element) {
 	} while (!empty);
 }
 
-void SerialQF::
+void ParallelQFWNOrder::
 add(const void* key,
 	const int len) {
+
 	uint64_t hash_val = hash(key, len, seed);
 	uint64_t fq = hash_to_quotient(hash_val, rbits, qmask);
 	uint64_t fr = hash_to_remainder(hash_val, rmask);
+
+	//lock according to table index fq
+	uint64_t lock_index = fq / lock_block_length;
+
+	if(lock_index!=0)
+		omp_set_nest_lock(&(lock[lock_index-1]));
+	
+	omp_set_nest_lock(&(lock[lock_index]));
+	
+	if(lock_index!=lock_size-1)
+		omp_set_nest_lock(&(lock[lock_index+1]));
+
 	uint64_t T_entry_fq = get_element(fq);
 	uint64_t entry = (fr << 3) & ~7;
 
@@ -139,6 +179,27 @@ add(const void* key,
 
 		uint64_t start = find_run_index(fq);
 		uint64_t s = start;
+
+		//very rough estimate (not true value) of the cluster length. 
+		uint32_t length = 0;
+		uint64_t b = start;
+		while (!is_empty_element(get_element(b))) {
+			b = increment(b, qmask);
+			length++;
+		}
+		
+		if(length > lock_block_length) {
+			printf("Warning: Cluster length(%d) might be larger than lock covered length(%d). It might produce false negative query result.\n", length, lock_block_length); 
+		}
+		if(length > lock_block_length/2) {
+			#pragma omp critical
+			if(length > lock_block_length/2) {
+				lock_block_length *= 2; //double the lock range to avoid race conditions
+				#ifdef DEBUG
+					printf("Covered length by a lock: %d\n", lock_block_length);
+				#endif 
+			}
+		}
 		
 		bool duplicated = false;
 
@@ -148,6 +209,9 @@ add(const void* key,
 				uint64_t reminder = get_remainder(get_element(s));
 				if (reminder == fr) {
 					duplicated = true; //duplicate element
+					#ifdef DEBUG
+						printf("Hard collision. Hash value: %" PRIu64 " fq: %" PRIu64 " fr: %" PRIu64 " \n", hash_val, fq, fr);
+					#endif
 					break;
 				} else if (reminder > fr) {
 					break;
@@ -176,10 +240,17 @@ add(const void* key,
 			insert_into(s, entry);
 		}
 	}
+	
+	if(lock_index!=lock_size-1)
+		omp_unset_nest_lock(&(lock[lock_index+1]));
+	
+	omp_unset_nest_lock(&(lock[lock_index]));
 
+	if(lock_index!=0)
+		omp_unset_nest_lock(&(lock[lock_index-1]));
 }
 
-bool SerialQF::
+bool ParallelQFWNOrder::
 query(const void* key,
 	const int len) {
 	uint64_t hash_val = hash(key, len, seed);
@@ -208,22 +279,26 @@ query(const void* key,
 	return true;
 }
 
-void SerialQF::
+void ParallelQFWNOrder::
 add_batch(const void* keys,
 	const int batchLen,
 	const int keyLen) {
 	const BYTE* keyArr = (const BYTE*)keys;
+
+	#pragma omp parallel for
 	for (int i = 0; i < batchLen; ++i) {
 		add(&keyArr[i * keyLen], keyLen);
 	}
 }
 
-void SerialQF::
+void ParallelQFWNOrder::
 query_batch(const void* keys,
 	BYTE* results,
 	const int batchLen,
 	const int keyLen) {
 	const BYTE* keyArr = (const BYTE*)keys;
+
+	#pragma omp parallel for
 	for (int i = 0; i < batchLen; ++i) {
 		if (query(&keyArr[i*keyLen], keyLen)) {
 			setBit(results, i);

@@ -7,6 +7,7 @@ DEPS = Common.h \
 	   murmur.h \
 	   ParallelBFWNOrder.h \
 	   SerialBF.h \
+	   ParallelQFWNOrder.h \
 	   SerialQF.h \
 	   testCase.h
 
@@ -16,6 +17,7 @@ OBJ = test.o \
 	  murmur.o \
 	  ParallelBFWNOrder.o \
 	  SerialBF.o \
+	  ParallelQFWNOrder.o \
 	  SerialQF.o \
 	  testCase.o
 

@@ -74,25 +74,24 @@ int main(int argc, char** argv) {
         printf("Usage is -t <numThreads> -tc <numTestCases> -bs <BFsize> -k <BFNumHash> -q <QFQuoSize> -q <QFRemSize>\n"); 
         return 0;
 	}
-	for (int i = 1; i < argc; i++) { 
-        if (i + 1 != argc) {
-        	int val = atoi(argv[i+1]);
-        	if (strcmp(argv[i], "-t") == 0) {
-                threadNum = val;
-            } else if (strcmp(argv[i], "-tc") == 0) {
-                testNum = val;
-            } else if (strcmp(argv[i], "-bs") == 0) {
-                BFsize = val;
-            } else if (strcmp(argv[i], "-k") == 0) {
-                BFhashNum = val;
-            } else if (strcmp(argv[i], "-q") == 0) {
-                qbits = val;
-            } else if (strcmp(argv[i], "-r") == 0) {
-                rbits = val;
-            } 
-        }
-    }
 	
+	for (int i = 1; i < argc; i+=2) {   
+    	int val = atoi(argv[i+1]);
+    	if (strcmp(argv[i], "-t") == 0) {
+            threadNum = val;
+        } else if (strcmp(argv[i], "-tc") == 0) {
+            testNum = val;
+        } else if (strcmp(argv[i], "-bs") == 0) {
+            BFsize = val;
+        } else if (strcmp(argv[i], "-k") == 0) {
+            BFhashNum = val;
+        } else if (strcmp(argv[i], "-q") == 0) {
+            qbits = val;
+        } else if (strcmp(argv[i], "-r") == 0) {
+            rbits = val;
+        }   
+    }
+
 	testUTAPBF(threadNum, testNum, BFsize, BFhashNum);
 	testUTAPQF(threadNum, testNum, qbits, rbits);
 

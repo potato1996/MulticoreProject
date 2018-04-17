@@ -10,7 +10,8 @@ public:
 
 	ParallelBFWNOrder(const size_t size = BF_DEFAULT_BYTES,
 		const size_t k = BF_DEFAULT_K,
-		const int _tn = PBF_DEFAULT_TN);
+		const int _tn = PBF_DEFAULT_TN,
+		bool enableExtraMemory = false);
 
 	ParallelBFWNOrder(const ParallelBFWNOrder&) = delete;
 
@@ -47,6 +48,7 @@ private:
 	BYTE* bitArray;
 	uint64_t bitArrLen;
 	int threadNum;
+	bool useExtraMemory;
 
 	size_t numHashes;
 #ifdef DISABLE_TWO_PHASE

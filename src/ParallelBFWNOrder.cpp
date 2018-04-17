@@ -111,10 +111,10 @@ add_batch(const void * keys,
 
 	if (useExtraMemory) {
 		//add to own bit array, and then gather up
-		BYTE* privateBitArr = new BYTE[bitArrLen];
+		BYTE* privateBitArr = new BYTE[bitArrLen/8 * threadNum];
 #pragma omp parallel
 		{
-			BYTE* ownBitArr = privateBitArr + bitArrLen * omp_get_thread_num();
+			BYTE* ownBitArr = privateBitArr + bitArrLen/8 * omp_get_thread_num();
 #pragma omp for schedule(runtime)
 			for (int i = 0; i < batchLen; ++i) {
 
@@ -165,10 +165,10 @@ add_batch(const void * keys,
 			uint64_t* llprivBitArr = (uint64_t*)privateBitArr;
 			uint64_t* llbitArr = (uint64_t*)bitArray;
 #pragma omp for schedule(runtime)
-			for (int i = 0; i < bitArrLen / 8; ++i) {
+			for (uint64_t i = 0; i < bitArrLen / 64; ++i) {
 				uint64_t res = 0;
 				for (int j = 0; j < threadNum; ++j) {
-					res |= llprivBitArr[j * bitArrLen / 8 + i];
+					res |= llprivBitArr[j * bitArrLen / 64 + i];
 				}
 				llbitArr[i] |= res;
 			}

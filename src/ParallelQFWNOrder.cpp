@@ -125,7 +125,7 @@ find_run_index(uint64_t fq) {
 }
 
 /* Insert element into QF[index], shifting elements as necessary. */
-void ParallelQFWNOrder::
+uint64_t ParallelQFWNOrder::
 insert_into(uint64_t index, uint64_t element) {
 	uint64_t prev;
 	uint64_t curr = element;
@@ -145,6 +145,8 @@ insert_into(uint64_t index, uint64_t element) {
 		curr = prev;
 		index = increment(index, qmask);
 	} while (!empty);
+
+	return index; // for calculating run length
 }
 
 void ParallelQFWNOrder::
@@ -179,25 +181,9 @@ add(const void* key,
 		uint64_t start = find_run_index(fq);
 		uint64_t s = start;
 
-		//very rough estimate (not true value) of the cluster length. 
-		uint32_t length = 0;
 		uint64_t b = start;
 		while (!is_empty_element(get_element(b))) {
 			b = increment(b, qmask);
-			length++;
-		}
-		
-		if(length > lock_block_length) {
-			printf("Warning: Cluster length(%d) might be larger than lock covered length(%d). It might produce false negative query result.\n", length, lock_block_length); 
-		}
-		if(length > lock_block_length/2) {
-			#pragma omp critical
-			if(length > lock_block_length/2) {
-				lock_block_length *= 2; //double the lock range to avoid race conditions
-				#ifdef DEBUG
-					printf("Covered length by a lock: %d\n", lock_block_length);
-				#endif 
-			}
 		}
 		
 		bool duplicated = false;
@@ -236,7 +222,24 @@ add(const void* key,
 				entry = set_shifted(entry);
 			}
 
-			insert_into(s, entry);
+			uint64_t stop_index = insert_into(s, entry);
+
+			//very rough and conservative estimate (not true value) of the cluster length by run length. 
+			uint32_t length = 2 * (stop_index - start);
+
+			//if run length > lock_block_length, give a thread safety warning.
+			if(length / 2 > lock_block_length) {
+				printf("Warning: Cluster length(%d) might be larger than lock covered length(%d). It might produce false negative query result.\n", length, lock_block_length); 
+			}
+			if(length > lock_block_length) {
+				#pragma omp critical
+				if(length > lock_block_length) {
+					lock_block_length *= 2; //double the lock range to avoid race conditions
+					#ifdef DEBUG
+						printf("Covered length by a lock: %d\n", lock_block_length);
+					#endif 
+				}
+			}
 		}
 	}
 	

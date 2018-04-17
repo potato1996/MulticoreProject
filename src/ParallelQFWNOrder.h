@@ -13,7 +13,7 @@ private:
 
 	void set_element(uint64_t index, uint64_t element);
 
-	void insert_into(uint64_t s, uint64_t elt);
+	uint64_t insert_into(uint64_t s, uint64_t elt);
 
 	uint64_t find_run_index(uint64_t fq);
 

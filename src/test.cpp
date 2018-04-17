@@ -20,18 +20,22 @@ void testUTAPBF(const int threadNum,
 	printf("---------- Start Testing Bloom Filter ----------\n");
 
 	auto cf = new ParallelBFWNOrder(BFsize, BFhashNum, threadNum);
+	auto cfExtraMem = new ParallelBFWNOrder(BFsize, BFhashNum, threadNum, true);
 	auto cfBaseline = new SerialBF(BFsize,BFhashNum);
 
 #ifdef DISABLE_TWO_PHASE
 	cf->forceSetSeeds(cfBaseline->getSeeds());
+	cfExtraMem->forceSetSeeds(cfBaseline->getSeeds());
 #else
 	cf->forceSetSeed(cfBaseline->getSeed());
+	cfExtraMem->forceSetSeed(cfBaseline->getSeed());
 #endif
 
 	testCase* testCases = new testCase();
 	testCases->generate(ELE_DEFAULT_BYTES, testNum, testNum, 0.8);
 	testCases->runTest(cfBaseline, true);
 	testCases->runTest(cf, true);
+	testCases->runTest(cfExtraMem, true);
 	delete testCases;
 	delete cfBaseline;
 	delete cf;

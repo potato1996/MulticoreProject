@@ -27,13 +27,15 @@ namespace {
 ParallelBFWNOrder::
 ParallelBFWNOrder(const size_t size, 
 	const size_t k,
-	const int _tn){
+	const int _tn,
+	bool enableExtraMemory){
 
 	//initialize bit array
 	bitArray = new BYTE[size];
 	bitArrLen = (uint64_t)size * sizeof(BYTE) * 8;
 	std::memset(bitArray, 0, size);
 	threadNum = _tn;
+	useExtraMemory = enableExtraMemory;
 
 	numHashes = k;
 #ifdef DISABLE_TWO_PHASE
@@ -107,51 +109,119 @@ add_batch(const void * keys,
 
 	omp_set_num_threads(threadNum);
 
-#pragma omp parallel for schedule(static) //, chunkSize)
-	for (int i = 0; i < batchLen; ++i) {
+	if (useExtraMemory) {
+		//add to own bit array, and then gather up
+		BYTE* privateBitArr = new BYTE[bitArrLen/8 * threadNum];
+#pragma omp parallel
+		{
+			BYTE* ownBitArr = privateBitArr + bitArrLen/8 * omp_get_thread_num();
+#pragma omp for schedule(runtime)
+			for (int i = 0; i < batchLen; ++i) {
 
 #ifdef DISABLE_TWO_PHASE
 
-		for (size_t k = 0; k < numHashes; ++k) {
+				for (size_t k = 0; k < numHashes; ++k) {
 
-			//calculate hash(i,k)
-			uint64_t out[2];
-			MurmurHash3_x64_128(&keyArr[i * keyLen], keyLen, seeds[k], out);
-			uint64_t posId = out[0] % bitArrLen;
+					//calculate hash(i,k)
+					uint64_t out[2];
+					MurmurHash3_x64_128(&keyArr[i * keyLen], keyLen, seeds[k], out);
+					uint64_t posId = out[0] % bitArrLen;
 
 #ifdef DEBUG
-			std::printf("Insertion Key=%d, Set Bit=%ld\n",(int)keyArr[i*keyLen], posId);
+					std::printf("Insertion Key=%d, Set Bit=%ld\n", (int)keyArr[i*keyLen], posId);
 #endif //DEBUG
 
-			//set bit
-			uint64_t byteId = posId / 8;
-			uint64_t bitId = posId % 8;
-			#pragma omp atomic
-				bitArray[byteId] |= mask[bitId];
-		}
+					//set bit
+					uint64_t byteId = posId / 8;
+					uint64_t bitId = posId % 8;
+
+					//write to own bit array, do not need atomic
+					ownBitArr[byteId] |= mask[bitId];
+				}
 
 #else 
 
-		uint64_t out[2];
-		MurmurHash3_x64_128(&keyArr[i * keyLen], keyLen, seed, out);
-		
-		for(size_t k = 0; k < numHashes; ++k){
-			uint64_t combineHash = out[0] + k * out[1];
-			uint64_t posId = combineHash % bitArrLen;	
+				uint64_t out[2];
+				MurmurHash3_x64_128(&keyArr[i * keyLen], keyLen, seed, out);
+
+				for (size_t k = 0; k < numHashes; ++k) {
+					uint64_t combineHash = out[0] + k * out[1];
+					uint64_t posId = combineHash % bitArrLen;
 
 #ifdef DEBUG
-			std::printf("Insertion Key=%d, Set Bit=%ld\n",(int)keyArr[i*keyLen], posId);
+					std::printf("Insertion Key=%d, Set Bit=%ld\n", (int)keyArr[i*keyLen], posId);
 #endif //DEBUG
 
-			//set bit
-			uint64_t byteId = posId / 8;
-			uint64_t bitId = posId % 8;
-			#pragma omp atomic
-				bitArray[byteId] |= mask[bitId];
+					//set bit
+					uint64_t byteId = posId / 8;
+					uint64_t bitId = posId % 8;
+					
+					//write to own bit array, do not need atomic
+					ownBitArr[byteId] |= mask[bitId];
+				}
+
+#endif //DISABLE_TWO_PHASE
+			}
+			uint64_t* llprivBitArr = (uint64_t*)privateBitArr;
+			uint64_t* llbitArr = (uint64_t*)bitArray;
+#pragma omp for schedule(runtime)
+			for (uint64_t i = 0; i < bitArrLen / 64; ++i) {
+				uint64_t res = 0;
+				for (int j = 0; j < threadNum; ++j) {
+					res |= llprivBitArr[j * bitArrLen / 64 + i];
+				}
+				llbitArr[i] |= res;
+			}
 		}
+		delete[]privateBitArr;
+	}
+	else {
+#pragma omp parallel for schedule(runtime)
+		for (int i = 0; i < batchLen; ++i) {
+
+#ifdef DISABLE_TWO_PHASE
+
+			for (size_t k = 0; k < numHashes; ++k) {
+
+				//calculate hash(i,k)
+				uint64_t out[2];
+				MurmurHash3_x64_128(&keyArr[i * keyLen], keyLen, seeds[k], out);
+				uint64_t posId = out[0] % bitArrLen;
+
+#ifdef DEBUG
+				std::printf("Insertion Key=%d, Set Bit=%ld\n", (int)keyArr[i*keyLen], posId);
+#endif //DEBUG
+
+				//set bit
+				uint64_t byteId = posId / 8;
+				uint64_t bitId = posId % 8;
+#pragma omp atomic
+				bitArray[byteId] |= mask[bitId];
+			}
+
+#else 
+
+			uint64_t out[2];
+			MurmurHash3_x64_128(&keyArr[i * keyLen], keyLen, seed, out);
+
+			for (size_t k = 0; k < numHashes; ++k) {
+				uint64_t combineHash = out[0] + k * out[1];
+				uint64_t posId = combineHash % bitArrLen;
+
+#ifdef DEBUG
+				std::printf("Insertion Key=%d, Set Bit=%ld\n", (int)keyArr[i*keyLen], posId);
+#endif //DEBUG
+
+				//set bit
+				uint64_t byteId = posId / 8;
+				uint64_t bitId = posId % 8;
+#pragma omp atomic
+				bitArray[byteId] |= mask[bitId];
+			}
 
 #endif //DISABLE_TWO_PHASE
 
+		}
 	}
 
 }

@@ -220,11 +220,11 @@ add(const void* key,
 			uint64_t stop_index = insert_into(s, entry);
 
 			//very rough and conservative estimate (not true value) of the cluster length by run length. 
-			uint32_t length = 2 * (stop_index - start);
+			uint64_t length = 2 * (stop_index - start);
 
 			//if run length > lock_block_length, give a thread safety warning.
 			if(length / 2 > lock_block_length) {
-				printf("Warning: Cluster length(%d) might be larger than lock covered length(%d). It might produce false negative query result.\n", length, lock_block_length); 
+				printf("Warning: Cluster length(%" PRIu64 ") might be larger than lock covered length(%d). It might produce false negative query result.\n", length, lock_block_length); 
 			}
 			if(length > lock_block_length) {
 				#pragma omp critical

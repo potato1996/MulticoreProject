@@ -180,11 +180,6 @@ add(const void* key,
 
 		uint64_t start = find_run_index(fq);
 		uint64_t s = start;
-
-		uint64_t b = start;
-		while (!is_empty_element(get_element(b))) {
-			b = increment(b, qmask);
-		}
 		
 		bool duplicated = false;
 

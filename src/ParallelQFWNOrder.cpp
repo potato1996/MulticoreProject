@@ -220,7 +220,8 @@ add(const void* key,
 			uint64_t stop_index = insert_into(s, entry);
 
 			//very rough and conservative estimate (not true value) of the cluster length by run length. 
-			uint64_t length = 2 * (stop_index - start);
+			//ignore those cases stop_index > start, we should have enough samples.
+			uint64_t length = stop_index > start? 2 * (stop_index - start) : 0; 
 
 			//if run length > lock_block_length, give a thread safety warning.
 			if(length / 2 > lock_block_length) {

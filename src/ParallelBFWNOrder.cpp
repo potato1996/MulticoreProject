@@ -2,7 +2,7 @@
 //Author: Dayou Du(2018) 
 //dayoudu@nyu.edu
 
-#include "ParallelBFWNOrder.h"
+#include"ParallelBFWNOrder.h"
 #include"helperFunctions.h"
 #include"murmur.h"
 #include<cstdlib>
@@ -104,8 +104,8 @@ add_batch(const void * keys,
 
 	const BYTE* keyArr = (const BYTE*)keys;
 
-	//TODO: Get a more "explainable" chunk size based on calculation
-	//int chunkSize = std::min(1000, (batchLen - 1) / threadNum + 1);
+	//NOTE: From profiling result we find out that no "schedule" clause
+	//      is better than everything else..
 
 	omp_set_num_threads(threadNum);
 
@@ -115,7 +115,7 @@ add_batch(const void * keys,
 #pragma omp parallel
 		{
 			BYTE* ownBitArr = privateBitArr + bitArrLen/8 * omp_get_thread_num();
-#pragma omp for schedule(runtime)
+#pragma omp for
 			for (int i = 0; i < batchLen; ++i) {
 
 #ifdef DISABLE_TWO_PHASE
@@ -162,9 +162,10 @@ add_batch(const void * keys,
 
 #endif //DISABLE_TWO_PHASE
 			}
+			//merge using 64bit - a great speed up of merging
 			uint64_t* llprivBitArr = (uint64_t*)privateBitArr;
 			uint64_t* llbitArr = (uint64_t*)bitArray;
-#pragma omp for schedule(runtime)
+#pragma omp for
 			for (uint64_t i = 0; i < bitArrLen / 64; ++i) {
 				uint64_t res = 0;
 				for (int j = 0; j < threadNum; ++j) {
@@ -176,7 +177,7 @@ add_batch(const void * keys,
 		delete[]privateBitArr;
 	}
 	else {
-#pragma omp parallel for schedule(runtime)
+#pragma omp parallel for
 		for (int i = 0; i < batchLen; ++i) {
 
 #ifdef DISABLE_TWO_PHASE
@@ -234,16 +235,18 @@ query_batch(const void * keys,
 
 	const BYTE* keyArr = (const BYTE*)keys;
 
-	//TODO: Get a more "explainable" chunk size based on calculation
-	//const int chunkSize = std::max(1, std::min(1000, (batchLen - 1) / threadNum + 1));
-	int chunkSize = (batchLen - 1)/threadNum + 1;
-	
-	//ensure that chunkSize is a multiply of 8
-	chunkSize = ((chunkSize - 1) / 8 + 1) * 8;
+	//NOTE: Here we really do not need a chunksize.
+	//1.    From profiling and tests we know that with no "schedule" clause
+	//      is better than everything else.
+	//2.    The results in reality should be a boolean array,
+	//      here we just would like to save time on testing - generating 
+	//      the test case inputs.
+	//3.    Even if it is a bit array. There is actually NO chance that
+	//      A thread approaching the end meets another thread just started.
 	
 	omp_set_num_threads(threadNum);
 
-#pragma omp parallel for schedule(static, chunkSize)
+#pragma omp parallel for 
 	for (int i = 0; i < batchLen; ++i) {
 		if (query(&keyArr[i*keyLen], keyLen)) {
 			//set result
@@ -252,9 +255,7 @@ query_batch(const void * keys,
 			#ifdef DEBUG
 				std::printf("Query Key=%d, Claim In Set\n",(int)keyArr[i*keyLen]);
 			#endif
-
-			//here we do NOT need an atomic operation.
-			//Because we ensured that chunksize is a mutiply of 8
+			
 			results[byteId] |= mask[bitId];
 		}
 	}

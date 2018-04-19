@@ -225,7 +225,7 @@ add(const void* key,
 
 			//if run length > lock_block_length, give a thread safety warning.
 			if(length / 2 > lock_block_length) {
-				printf("Warning: Cluster length(%" PRIu64 ") might be larger than lock covered length(%d). It might produce false negative query result.\n", length, lock_block_length); 
+				printf("Warning: Cluster length(%lu) might be larger than lock covered length(%d). It might produce false negative query result.\n", length, lock_block_length); 
 			}
 			if(length > lock_block_length) {
 				#pragma omp critical

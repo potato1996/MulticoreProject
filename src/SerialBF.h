@@ -33,7 +33,7 @@ public:
 #ifdef DISABLE_TWO_PHASE
 	uint32_t* getSeeds() { return seeds; }
 	void forceSetSeeds(uint32_t* _s) {
-		for (int i = 0; i < numHashes; ++i)seeds[i] = _s[i];
+		for (size_t i = 0; i < numHashes; ++i)seeds[i] = _s[i];
 	}
 #else
 	uint32_t getSeed() {return seed;}

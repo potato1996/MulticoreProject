@@ -115,6 +115,7 @@ add_batch(const void * keys,
 #pragma omp parallel
 		{
 			BYTE* ownBitArr = privateBitArr + bitArrLen/8 * omp_get_thread_num();
+			memset(ownBitArr, 0 , bitArrLen/8);
 #pragma omp for
 			for (int i = 0; i < batchLen; ++i) {
 

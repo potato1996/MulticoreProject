@@ -255,7 +255,8 @@ query_batch(const void * keys,
 	//      is better than everything else.
 	//2.    We have already garanteed that the chunksize for each 
 	//      thread is a multiply of 8.
-	
+
+    const BYTE* keyArr = (const BYTE*)keys;	
 	omp_set_num_threads(threadNum);
 
 #pragma omp parallel for 

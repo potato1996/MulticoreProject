@@ -22,4 +22,11 @@ typedef uint8_t BYTE;
 
 //switchs
 //#define DEBUG
+
+/** If disabled: Use two hash values to calculate k hash values. See:
+ ** Kirsch A., Mitzenmacher M. Less Hashing
+ ** Same Performance: Building a Better Bloom Filter
+ ** In: Azar Y., Erlebach T. (eds) Algorithms – ESA 2006. 
+ ** ESA 2006. Lecture Notes in Computer Science, vol 4168. Springer, Berlin, Heidelberg
+ **/
 #define DISABLE_TWO_PHASE

@@ -234,16 +234,27 @@ query_batch(const void * keys,
 	const int batchLen, 
 	const int keyLen){
 
-	const BYTE* keyArr = (const BYTE*)keys;
+    //NOTE: Regarding the input batchLen
+	//1.    Since we use a bit array to store the result,
+	//      We have to correctly deal with the racing conditions
+	//      More precisly, we garantee that each thread get a 
+	//      chunksize with a multiply of 8.
+	//
+	//2.    The results in reality should be a boolean array,
+	//      here we just would like to save time on testing 
+	//      - generating the test case inputs.
+	//
+	//3.    To summarize, this racing condition will NOT actually
+	//      show up in reality, and has nothing to do with the algorithm.
+	//    **It is just a side effect of how to store the results**
+
+    //ASSERT((batchLen % (8 * threadNum)) == 0)
 
 	//NOTE: Here we really do not need a chunksize.
 	//1.    From profiling and tests we know that with no "schedule" clause
 	//      is better than everything else.
-	//2.    The results in reality should be a boolean array,
-	//      here we just would like to save time on testing - generating 
-	//      the test case inputs.
-	//3.    Even if it is a bit array. There is actually NO chance that
-	//      A thread approaching the end meets another thread just started.
+	//2.    We have already garanteed that the chunksize for each 
+	//      thread is a multiply of 8.
 	
 	omp_set_num_threads(threadNum);
 

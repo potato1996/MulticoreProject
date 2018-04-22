@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
 	int rbits = QF_DEFAULT_RBITS;
 
 	if (argc < 3) { 
-        printf("Usage is -t <numThreads> -tc <numTestCases> -bs <BFsize> -k <BFNumHash> -q <QFQuoSize> -q <QFRemSize>\n"); 
+        printf("Usage is -t <numThreads> -tc <numTestCases> -bs <BFsize> -k <BFNumHash> -q <QFQuoSize> -r <QFRemSize>\n"); 
         return 0;
 	}
 	

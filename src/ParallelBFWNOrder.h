@@ -2,16 +2,27 @@
 //Author: Dayou Du(2018) 
 //dayoudu@nyu.edu
 
+/** Parallel version of Bloom Filter 
+ ** Inherited from CommonFilter, provide the four methods
+ **/
+
+/** The add_back and query_batch is specially parallized 
+ ** for **batch-oriented jobs**
+ ** i.e. NO order is guranteed in a batch
+ **/
+
 #pragma once
 #include"CommonFilter.h"
 class ParallelBFWNOrder :public CommonFilter {
 public:
 	ParallelBFWNOrder() = delete;
 
-	ParallelBFWNOrder(const size_t size = BF_DEFAULT_BYTES,
-		const size_t k = BF_DEFAULT_K,
-		const int _tn = PBF_DEFAULT_TN,
-		bool enableExtraMemory = false);
+	ParallelBFWNOrder(const size_t size = BF_DEFAULT_BYTES, //BF bit array length, in bytes
+		const size_t k = BF_DEFAULT_K, // number of hash functions
+		const int _tn = PBF_DEFAULT_TN,// number of threads
+		bool enableExtraMemory = false // if set, use extra memory when add_batch
+		                               // will not cost extra memory after add finish.
+		);
 
 	ParallelBFWNOrder(const ParallelBFWNOrder&) = delete;
 

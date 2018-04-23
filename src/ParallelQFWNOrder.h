@@ -2,6 +2,15 @@
 //Author: Yik Wai Ng(2018) 
 //ywn202@nyu.edu
 
+/** Parallel version of Quotient Filter 
+ ** Inherited from CommonFilter, provide the four methods
+ **/
+
+/** The add_back and query_batch is specially parallized 
+ ** for **batch-oriented jobs**
+ ** i.e. NO order is guranteed in a batch
+ **/
+
 #pragma once
 #include"Common.h"
 #include"CommonFilter.h"

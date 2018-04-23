@@ -7,7 +7,7 @@ Parallelizing Typical Approximate Member Query(AMQ) Filters Using OpenMP
 
 g++-6.2.0
 
-(with openmp support)
+(with openmp and c++11 support)
 
 ## How to Compile
 
